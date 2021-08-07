@@ -3,7 +3,7 @@
  *
  * @see https://developer.wordpress.org/block-editor/packages/packages-i18n/
  */
-import { useRef, useReducer, useCallback } from '@wordpress/element';
+import { useRef, useCallback } from '@wordpress/element';
 import { v4 as uuid } from 'uuid';
 /**
  * React hook that is used to mark the block wrapper element.
@@ -20,6 +20,7 @@ import { useBlockProps } from '@wordpress/block-editor';
  * @see https://www.npmjs.com/package/@wordpress/scripts#using-css
  */
 import './editor.scss';
+import { Tag } from './components';
 
 const ADD_TAG = 'ADD_TAG';
 const REMOVE_TAG = 'REMOVE_TAG';
@@ -32,7 +33,16 @@ function tagsReducer( state, { type, payload } ) {
 		case REMOVE_TAG:
 			return [ ...state.filter( ( tag ) => tag !== payload.id ) ];
 		case MOVE_TAG:
-			return { count: state.count - 1 };
+			state.splice(
+				state.findIndex( ( tag ) => tag.id === payload.id ),
+				1,
+				{
+					x: payload.x,
+					y: payload.y,
+					id: payload.id,
+				}
+			);
+			return [ ...state ];
 		case EDIT_TAG:
 			return { count: state.count - 1 };
 		default:
@@ -85,12 +95,16 @@ export default function Edit( { attributes, setAttributes } ) {
 			/>
 			<div className="tags">
 				{ tags.map( ( tag ) => (
-					<div
-						className="tag"
+					<Tag
+						x={ tag.x }
+						y={ tag.y }
 						key={ tag.id }
-						style={ {
-							transform: `translate(${ tag.x }px, ${ tag.y }px)`,
-						} }
+						onMove={ ( x, y ) =>
+							dispatch( {
+								type: MOVE_TAG,
+								payload: { x, y, id: tag.id },
+							} )
+						}
 					/>
 				) ) }
 			</div>
