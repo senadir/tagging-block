@@ -18,6 +18,8 @@
 		"@wordpress/blocks": "^11.0.0",
 		"@wordpress/i18n": "^4.2.1",
 		"react-draggable": "^4.4.3",
+		"react-tiny-popover": "^6.0.10",
+		"use-resize-observer": "^7.0.1",
 		"uuid": "^8.3.2"
 	},
 	"devDependencies": {

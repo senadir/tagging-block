@@ -21,12 +21,25 @@
 }
 
 .tag {
-	width: 20px;
-	height: 20px;
-	left: -10px;
-	top: -10px;
-	border-radius: 10px;
-	background-color: rgba(0,0,0,0.7);
+
 	position: absolute;
 	pointer-events: auto;
+	&:after {
+		content: "";
+		width: 20px;
+		height: 20px;
+		left: -10px;
+		top: -10px;
+	border-radius: 10px;
+
+		display: block;
+	background-color: rgba(0,0,0,0.7);
+position: relative;
+	}
+	&.no-dot {
+		width: 0;
+		height: 0;
+		left: 0;
+		top: 0;
+	}
 }

@@ -3,8 +3,9 @@
  *
  * @see https://developer.wordpress.org/block-editor/packages/packages-i18n/
  */
-import { useRef, useCallback } from '@wordpress/element';
+import { useRef, useCallback, useState, useMemo } from '@wordpress/element';
 import { v4 as uuid } from 'uuid';
+import useResizeObserver from 'use-resize-observer';
 /**
  * React hook that is used to mark the block wrapper element.
  * It provides all the necessary props like the class name.
@@ -54,6 +55,17 @@ function isTag( target ) {
 	return !! target?.classList.contains( 'tagged-block-tag' );
 }
 
+function throttle( func, timeFrame ) {
+	let lastTime = 0;
+	return function ( ...args ) {
+		const now = new Date();
+		if ( now - lastTime >= timeFrame ) {
+			func( ...args );
+			lastTime = now;
+		}
+	};
+}
+
 /**
  * The edit function describes the structure of your block in the context of the
  * editor. This represents what the editor will render when the block is used.
@@ -64,13 +76,31 @@ function isTag( target ) {
 export default function Edit( { attributes, setAttributes } ) {
 	const { tags } = attributes;
 	const ref = useRef();
-	const blockProps = useBlockProps( { ref } );
-	const getPosition = useCallback( ( event ) => {
-		const rect = ref.current.getBoundingClientRect();
-		const x = event.clientX - rect.left; //x position within the element.
-		const y = event.clientY - rect.top; //y position within the element.
-		return [ x, y ];
-	}, [] );
+	const [ size, setSize ] = useState( {} );
+	useResizeObserver( {
+		ref,
+		onResize: throttle( setSize, 500 ),
+	} );
+	const relativeTags = useMemo( () => {
+		if ( size.width && size.height ) {
+			return tags.map( ( tag ) => ( {
+				...tag,
+				x: size.width * tag.x,
+				y: size.height * tag.y,
+			} ) );
+		}
+		return [];
+	}, [ size.width, size.height, tags ] );
+	const blockProps = useBlockProps();
+	const getPosition = useCallback(
+		( event ) => {
+			const rect = ref.current.getBoundingClientRect();
+			const x = ( event.clientX - rect.left ) / size.width; //x position within the element.
+			const y = ( event.clientY - rect.top ) / size.height; //y position within the element.
+			return [ x, y ];
+		},
+		[ size ]
+	);
 	const dispatch = useCallback(
 		( action ) => {
 			setAttributes( {
@@ -86,6 +116,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		},
 		[ getPosition, dispatch ]
 	);
+
 	return (
 		<figure { ...blockProps }>
 			<img
@@ -94,7 +125,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				ref={ ref }
 			/>
 			<div className="tags">
-				{ tags.map( ( tag ) => (
+				{ relativeTags.map( ( tag ) => (
 					<Tag
 						x={ tag.x }
 						y={ tag.y }
@@ -102,7 +133,11 @@ export default function Edit( { attributes, setAttributes } ) {
 						onMove={ ( x, y ) =>
 							dispatch( {
 								type: MOVE_TAG,
-								payload: { x, y, id: tag.id },
+								payload: {
+									x: x / size.width,
+									y: y / size.height,
+									id: tag.id,
+								},
 							} )
 						}
 					/>

@@ -19,6 +19,7 @@ module.exports = {
 			'@wordpress/keycodes',
 			'@wordpress/url',
 			'@wordpress/element',
+			'@wordpress/components',
 		],
 		'import/resolver': {
 			node: {},
