@@ -6,13 +6,15 @@
 import { useRef, useCallback, useState, useMemo } from '@wordpress/element';
 import { v4 as uuid } from 'uuid';
 import useResizeObserver from 'use-resize-observer';
+import { ToolbarButton } from '@wordpress/components';
+import { tag as tagIcon } from '@wordpress/icons';
 /**
  * React hook that is used to mark the block wrapper element.
  * It provides all the necessary props like the class name.
  *
  * @see https://developer.wordpress.org/block-editor/packages/packages-block-editor/#useBlockProps
  */
-import { useBlockProps } from '@wordpress/block-editor';
+import { useBlockProps, BlockControls } from '@wordpress/block-editor';
 
 /**
  * Lets webpack process CSS, SASS or SCSS files referenced in JavaScript files.
@@ -91,6 +93,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	const { tags } = attributes;
 	const ref = useRef();
 	const [ size, setSize ] = useState( {} );
+	const [ isAddingTags, setIsAddingTags ] = useState( false );
 	useResizeObserver( {
 		ref,
 		onResize: throttle( setSize, 500 ),
@@ -131,41 +134,52 @@ export default function Edit( { attributes, setAttributes } ) {
 		[ getPosition, dispatch ]
 	);
 	return (
-		<figure { ...blockProps }>
-			<img
-				src="https://i.redd.it/u2v4cx280g071.jpg"
-				onClick={ handleClick }
-				ref={ ref }
-			/>
-			<div className="tags">
-				{ relativeTags.map( ( tag ) => (
-					<Tag
-						x={ tag.x }
-						y={ tag.y }
-						key={ tag.id }
-						link={ tag.link }
-						onMove={ ( x, y ) =>
-							dispatch( {
-								type: MOVE_TAG,
-								payload: {
-									x: x / size.width,
-									y: y / size.height,
-									id: tag.id,
-								},
-							} )
-						}
-						onUpdate={ ( link ) =>
-							dispatch( {
-								type: EDIT_TAG,
-								payload: {
-									link,
-									id: tag.id,
-								},
-							} )
-						}
-					/>
-				) ) }
-			</div>
-		</figure>
+		<>
+			<BlockControls group="block">
+				<ToolbarButton
+					showTooltip
+					onClick={ () => setIsAddingTags( ( prev ) => ! prev ) }
+					isActive={ isAddingTags }
+					label={ 'Add tags' }
+					icon={ tagIcon }
+				/>
+			</BlockControls>
+			<figure { ...blockProps }>
+				<img
+					src="https://i.redd.it/u2v4cx280g071.jpg"
+					onClick={ isAddingTags && handleClick }
+					ref={ ref }
+				/>
+				<div className="tags">
+					{ relativeTags.map( ( tag ) => (
+						<Tag
+							x={ tag.x }
+							y={ tag.y }
+							key={ tag.id }
+							link={ tag.link }
+							onMove={ ( x, y ) =>
+								dispatch( {
+									type: MOVE_TAG,
+									payload: {
+										x: x / size.width,
+										y: y / size.height,
+										id: tag.id,
+									},
+								} )
+							}
+							onUpdate={ ( link ) =>
+								dispatch( {
+									type: EDIT_TAG,
+									payload: {
+										link,
+										id: tag.id,
+									},
+								} )
+							}
+						/>
+					) ) }
+				</div>
+			</figure>
+		</>
 	);
 }
