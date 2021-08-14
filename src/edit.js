@@ -30,7 +30,10 @@ const EDIT_TAG = 'EDIT_TAG';
 function tagsReducer( state, { type, payload } ) {
 	switch ( type ) {
 		case ADD_TAG:
-			return [ ...state, { x: payload.x, y: payload.y, id: uuid() } ];
+			return [
+				...state,
+				{ x: payload.x, y: payload.y, id: uuid(), link: {} },
+			];
 		case REMOVE_TAG:
 			return [ ...state.filter( ( tag ) => tag !== payload.id ) ];
 		case MOVE_TAG:
@@ -38,6 +41,7 @@ function tagsReducer( state, { type, payload } ) {
 				state.findIndex( ( tag ) => tag.id === payload.id ),
 				1,
 				{
+					link: state.find( ( tag ) => tag.id === payload.id ).link,
 					x: payload.x,
 					y: payload.y,
 					id: payload.id,
@@ -45,7 +49,17 @@ function tagsReducer( state, { type, payload } ) {
 			);
 			return [ ...state ];
 		case EDIT_TAG:
-			return { count: state.count - 1 };
+			return [
+				...state.map( ( tag ) => {
+					if ( tag.id === payload.id ) {
+						return {
+							...tag,
+							link: { ...tag.link, ...payload.link },
+						};
+					}
+					return tag;
+				} ),
+			];
 		default:
 			throw new Error();
 	}
@@ -116,7 +130,6 @@ export default function Edit( { attributes, setAttributes } ) {
 		},
 		[ getPosition, dispatch ]
 	);
-
 	return (
 		<figure { ...blockProps }>
 			<img
@@ -130,12 +143,22 @@ export default function Edit( { attributes, setAttributes } ) {
 						x={ tag.x }
 						y={ tag.y }
 						key={ tag.id }
+						link={ tag.link }
 						onMove={ ( x, y ) =>
 							dispatch( {
 								type: MOVE_TAG,
 								payload: {
 									x: x / size.width,
 									y: y / size.height,
+									id: tag.id,
+								},
+							} )
+						}
+						onUpdate={ ( link ) =>
+							dispatch( {
+								type: EDIT_TAG,
+								payload: {
+									link,
 									id: tag.id,
 								},
 							} )

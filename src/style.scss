@@ -1,15 +1,8 @@
-/**
- * The following styles get applied both on the front of your site
- * and in the editor.
- *
- * Replace them with your own styles or remove the file completely.
- */
+@use "sass:math";
 
-.wp-block-create-block-tagging-block {
-	background-color: #21759b;
-	color: #fff;
-	padding: 2px;
-}
+$tag-size: 10px;
+$tag-border-size: 5px;
+$arrow-size: 5px;
 
 .tags {
 	position: absolute;
@@ -21,25 +14,55 @@
 }
 
 .tag {
-
 	position: absolute;
 	pointer-events: auto;
+	left: math.div(-$tag-size, 2);
+	top: math.div(-$tag-size, 2);
+
 	&:after {
 		content: "";
-		width: 20px;
-		height: 20px;
-		left: -10px;
-		top: -10px;
-	border-radius: 10px;
-
+		width: $tag-size;
+		height: $tag-size;
+		border-radius: $tag-size;
 		display: block;
-	background-color: rgba(0,0,0,0.7);
-position: relative;
+		background-color: rgba(0, 0, 0, 0.8);
+		box-shadow: 0 0 0 $tag-border-size rgba(0, 0, 0, 50%);
+		position: relative;
 	}
+
 	&.no-dot {
 		width: 0;
 		height: 0;
 		left: 0;
 		top: 0;
+	}
+}
+
+.tag-tooltip {
+	border-radius: 2px;
+	box-shadow: 0 0 0 1px rgba( 255, 255, 255, 0.04 );
+	background-color: rgba(0,0,0,0.8);
+	color: white;
+	padding: 4px 8px;
+	white-space: nowrap;
+	text-align: center;
+	line-height: 1;
+	font-size: 12px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	transform: translate(calc(-50% + #{math.div($tag-size, 2)}), calc(100% + 4px));
+
+	&:before {
+		content: "";
+		width: 0;
+		height: 0;
+		border-left: $arrow-size solid transparent;
+		border-right: $arrow-size solid transparent;
+		border-bottom: $arrow-size solid rgba( 0, 0, 0, 0.8 );
+		position: absolute;
+		top: 0;
+    left: 50%;
+    transform: translate(-$arrow-size, -$arrow-size);
 	}
 }
