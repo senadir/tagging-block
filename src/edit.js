@@ -34,7 +34,7 @@ function tagsReducer( state, { type, payload } ) {
 		case ADD_TAG:
 			return [
 				...state,
-				{ x: payload.x, y: payload.y, id: uuid(), link: {} },
+				{ x: payload.x, y: payload.y, id: uuid(), link: payload.link },
 			];
 		case REMOVE_TAG:
 			return [ ...state.filter( ( tag ) => tag !== payload.id ) ];
@@ -83,16 +83,13 @@ function throttle( func, timeFrame ) {
 }
 
 /**
- * The edit function describes the structure of your block in the context of the
- * editor. This represents what the editor will render when the block is used.
- *
- * @see https://developer.wordpress.org/block-editor/developers/block-api/block-edit-save/#edit
  * @return {WPElement} Element to render.
  */
 export default function Edit( { attributes, setAttributes } ) {
 	const { tags } = attributes;
 	const ref = useRef();
 	const [ size, setSize ] = useState( {} );
+	const [ temporaryTag, setTemporaryTag ] = useState( null );
 	const [ isAddingTags, setIsAddingTags ] = useState( false );
 	useResizeObserver( {
 		ref,
@@ -128,10 +125,53 @@ export default function Edit( { attributes, setAttributes } ) {
 	);
 	const handleClick = useCallback(
 		( event ) => {
-			const [ x, y ] = getPosition( event );
-			dispatch( { type: ADD_TAG, payload: { x, y } } );
+			if ( isAddingTags ) {
+				const [ x, y ] = getPosition( event );
+				setTemporaryTag( { x, y, id: null } );
+			}
 		},
-		[ getPosition, dispatch ]
+		[ getPosition, isAddingTags ]
+	);
+
+	const updateTag = useCallback(
+		( link, id ) => {
+			return dispatch( {
+				type: EDIT_TAG,
+				payload: {
+					link,
+					id,
+				},
+			} );
+		},
+		[ dispatch ]
+	);
+
+	const persistTemporaryTag = useCallback(
+		( link ) => {
+			if ( link?.url ) {
+				dispatch( {
+					type: ADD_TAG,
+					payload: {
+						link,
+						...temporaryTag,
+					},
+				} );
+			}
+			setTemporaryTag( null );
+		},
+		[ dispatch, temporaryTag ]
+	);
+
+	const removeTag = useCallback(
+		( id ) => {
+			dispatch( {
+				type: REMOVE_TAG,
+				payload: {
+					id,
+				},
+			} );
+		},
+		[ dispatch ]
 	);
 	return (
 		<>
@@ -147,37 +187,38 @@ export default function Edit( { attributes, setAttributes } ) {
 			<figure { ...blockProps }>
 				<img
 					src="https://i.redd.it/u2v4cx280g071.jpg"
-					onClick={ isAddingTags && handleClick }
+					onClick={ handleClick }
 					ref={ ref }
 				/>
 				<div className="tags">
-					{ relativeTags.map( ( tag ) => (
-						<Tag
-							x={ tag.x }
-							y={ tag.y }
-							key={ tag.id }
-							link={ tag.link }
-							onMove={ ( x, y ) =>
-								dispatch( {
-									type: MOVE_TAG,
-									payload: {
-										x: x / size.width,
-										y: y / size.height,
-										id: tag.id,
-									},
-								} )
-							}
-							onUpdate={ ( link ) =>
-								dispatch( {
-									type: EDIT_TAG,
-									payload: {
-										link,
-										id: tag.id,
-									},
-								} )
-							}
-						/>
-					) ) }
+					<>
+						{ relativeTags.map( ( tag ) => (
+							<Tag
+								{ ...tag }
+								key={ tag.key }
+								onMove={ ( x, y ) =>
+									dispatch( {
+										type: MOVE_TAG,
+										payload: {
+											x: x / size.width,
+											y: y / size.height,
+											id: tag.id,
+										},
+									} )
+								}
+								onUpdate={ updateTag }
+								onRemove={ removeTag }
+							/>
+						) ) }
+						{ !! temporaryTag && (
+							<Tag
+								x={ temporaryTag.x * size.width }
+								y={ temporaryTag.y * size.height }
+								onUpdate={ persistTemporaryTag }
+								onRemove={ () => setTemporaryTag( null ) }
+							/>
+						) }
+					</>
 				</div>
 			</figure>
 		</>
