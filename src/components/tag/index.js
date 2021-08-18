@@ -18,7 +18,7 @@ function Tag( {
 	const [ isLinkOpen, setIsLinkOpen ] = useState( ! id );
 	const [ internalLink, setInternalLink ] = useState( link );
 	const handleClosingPopover = useCallback( () => {
-		setInternalLink( false );
+		setIsLinkOpen( false );
 		onUpdate( internalLink );
 	}, [ internalLink, onUpdate ] );
 	if ( initialX === undefined && initialY === undefined ) {
