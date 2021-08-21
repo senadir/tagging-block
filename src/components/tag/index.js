@@ -11,10 +11,11 @@ function Tag( {
 	onMove,
 	onUpdate,
 	onRemove,
+	className,
+	styles,
 	id = null,
 } ) {
 	const nodeRef = useRef();
-	const [ isDragging, setIsDragging ] = useState( false );
 	const [ isLinkOpen, setIsLinkOpen ] = useState( ! id );
 	const [ internalLink, setInternalLink ] = useState( link );
 	const handleClosingPopover = useCallback( () => {
@@ -24,32 +25,29 @@ function Tag( {
 	if ( initialX === undefined && initialY === undefined ) {
 		return null;
 	}
+	console.log( className );
 	return (
 		<Draggable
 			disabled={ ! onMove }
-			handle=".tag"
+			handle=".tag-handle"
 			position={ { x: initialX, y: initialY } }
-			onDrag={ () => setIsDragging( true ) }
-			onStop={ ( _, { x, y } ) => {
-				if ( isDragging ) {
-					onMove( x, y );
-				} else {
-					setIsLinkOpen( ( prev ) => ! prev );
-				}
-				setIsDragging( false );
-			} }
+			onStop={ ( _, { x, y } ) => onMove( x, y ) }
 			nodeRef={ nodeRef }
 		>
-			<div className="tag" ref={ nodeRef }>
+			<div ref={ nodeRef } className="tag">
+				<div className={ classnames( 'tag-handle', className ) }></div>
 				<>
 					{ !! link?.text && (
-						<span
-							className={ classnames( 'tag-tooltip', {
+						<button
+							onClick={ () =>
+								setIsLinkOpen( ( prev ) => ! prev )
+							}
+							className={ classnames( 'tag-tooltip', className, {
 								'has-link': link.url,
 							} ) }
 						>
 							{ link.text }
-						</span>
+						</button>
 					) }
 					{ isLinkOpen && (
 						<Popover

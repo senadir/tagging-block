@@ -1,27 +1,21 @@
-/**
- * Retrieves the translation of text.
- *
- * @see https://developer.wordpress.org/block-editor/packages/packages-i18n/
- */
 import { useRef, useCallback, useState, useMemo } from '@wordpress/element';
 import { v4 as uuid } from 'uuid';
 import useResizeObserver from 'use-resize-observer';
 import { ToolbarButton } from '@wordpress/components';
 import { tag as tagIcon } from '@wordpress/icons';
-/**
- * React hook that is used to mark the block wrapper element.
- * It provides all the necessary props like the class name.
- *
- * @see https://developer.wordpress.org/block-editor/packages/packages-block-editor/#useBlockProps
- */
-import { useBlockProps, BlockControls } from '@wordpress/block-editor';
+import { __ } from '@wordpress/i18n';
+import classnames from 'classnames';
+import {
+	useBlockProps,
+	BlockControls,
+	withColors,
+	PanelColorSettings,
+	ContrastChecker,
+	InspectorControls,
+	getColorClassName,
+} from '@wordpress/block-editor';
+import { compose } from '@wordpress/compose';
 
-/**
- * Lets webpack process CSS, SASS or SCSS files referenced in JavaScript files.
- * Those files can contain any CSS code that gets applied to the editor.
- *
- * @see https://www.npmjs.com/package/@wordpress/scripts#using-css
- */
 import './editor.scss';
 import { Tag } from './components';
 
@@ -85,12 +79,20 @@ function throttle( func, timeFrame ) {
 /**
  * @return {WPElement} Element to render.
  */
-export default function Edit( { attributes, setAttributes } ) {
+function Edit( {
+	attributes,
+	setAttributes,
+	textColor,
+	setTextColor,
+	backgroundColor,
+	setBackgroundColor,
+	...props
+} ) {
 	const { tags } = attributes;
 	const ref = useRef();
 	const [ size, setSize ] = useState( {} );
 	const [ temporaryTag, setTemporaryTag ] = useState( null );
-	const [ isAddingTags, setIsAddingTags ] = useState( false );
+	const [ isAddingTags, setIsAddingTags ] = useState( () => ! tags.length );
 	useResizeObserver( {
 		ref,
 		onResize: throttle( setSize, 500 ),
@@ -106,6 +108,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		return [];
 	}, [ size.width, size.height, tags ] );
 	const blockProps = useBlockProps();
+
 	const getPosition = useCallback(
 		( event ) => {
 			const rect = ref.current.getBoundingClientRect();
@@ -173,6 +176,13 @@ export default function Edit( { attributes, setAttributes } ) {
 		},
 		[ dispatch ]
 	);
+
+	const tagClassnames = classnames( textColor.class, backgroundColor.class );
+	const tagStyles = ! ( textColor.class && backgroundColor.class ) && {
+		color: textColor.color,
+		backgroundColor: backgroundColor.color,
+	};
+	console.log( backgroundColor );
 	return (
 		<>
 			<BlockControls group="block">
@@ -184,6 +194,32 @@ export default function Edit( { attributes, setAttributes } ) {
 					icon={ tagIcon }
 				/>
 			</BlockControls>
+			<InspectorControls>
+				<PanelColorSettings
+					title={ __( 'Color' ) }
+					initialOpen={ false }
+					colorSettings={ [
+						{
+							value: textColor.color,
+							onChange: setTextColor,
+							label: __( 'Text' ),
+						},
+						{
+							value: backgroundColor.color,
+							onChange: setBackgroundColor,
+							label: __( 'Background' ),
+						},
+					] }
+				>
+					<>
+						<ContrastChecker
+							backgroundColor={ backgroundColor.color }
+							textColor={ textColor.color }
+							fontSize={ '12px' }
+						/>
+					</>
+				</PanelColorSettings>
+			</InspectorControls>
 			<figure { ...blockProps }>
 				<img
 					src="https://i.redd.it/u2v4cx280g071.jpg"
@@ -195,6 +231,8 @@ export default function Edit( { attributes, setAttributes } ) {
 						{ relativeTags.map( ( tag ) => (
 							<Tag
 								{ ...tag }
+								className={ tagClassnames }
+								styles={ tagStyles }
 								key={ tag.key }
 								onMove={ ( x, y ) =>
 									dispatch( {
@@ -212,6 +250,8 @@ export default function Edit( { attributes, setAttributes } ) {
 						) ) }
 						{ !! temporaryTag && (
 							<Tag
+								className={ tagClassnames }
+								styles={ tagStyles }
 								x={ temporaryTag.x * size.width }
 								y={ temporaryTag.y * size.height }
 								onUpdate={ persistTemporaryTag }
@@ -224,3 +264,10 @@ export default function Edit( { attributes, setAttributes } ) {
 		</>
 	);
 }
+
+export default compose( [
+	withColors(
+		{ textColor: 'color' },
+		{ backgroundColor: 'background-color' }
+	),
+] )( Edit );

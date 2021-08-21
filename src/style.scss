@@ -19,17 +19,39 @@ $arrow-size: 5px;
 	left: math.div(-$tag-size, 2);
 	top: math.div(-$tag-size, 2);
 
-	&:after {
-		content: "";
-		width: $tag-size;
-		height: $tag-size;
-		border-radius: $tag-size;
-		display: block;
-		background-color: rgba(0, 0, 0, 0.8);
-		box-shadow: 0 0 0 $tag-border-size rgba(0, 0, 0, 50%);
-		position: relative;
-	}
+	.tag-handle {
+			width: $tag-size;
+			height: $tag-size;
+			border-radius: 50%;
+			background-color: black;
+			display: block;
+			opacity: 0.8;
 
+		&:before {
+			content: "";
+
+			width: $tag-size + 2 * $tag-border-size;
+			height: $tag-size + 2 * $tag-border-size;
+			border-radius: 50%;
+			left: -$tag-border-size;
+			top: -$tag-border-size;
+
+			display: block;
+			position: absolute;
+
+			opacity: 0.5;
+			background-color: inherit;
+
+			transform: scale(1);
+		}
+
+		&:focus:before {
+			animation: pulse 2s infinite;
+		}
+	}
+	&.react-draggable-dragging .tag-handle:focus:before {
+		animation: none;
+	}
 	&.no-dot {
 		width: 0;
 		height: 0;
@@ -40,9 +62,10 @@ $arrow-size: 5px;
 
 .tag-tooltip {
 	border-radius: 2px;
-	box-shadow: 0 0 0 1px rgba( 255, 255, 255, 0.04 );
-	background-color: rgba(0,0,0,0.8);
+	border: none;
+	background-color: black;
 	color: white;
+	opacity: 0.8;
 	padding: 4px 8px;
 	white-space: nowrap;
 	text-align: center;
@@ -51,18 +74,19 @@ $arrow-size: 5px;
 	position: absolute;
 	left: 0;
 	top: 0;
-	transform: translate(calc(-50% + #{math.div($tag-size, 2)}), calc(100% + 4px));
+	transform: translate(calc(-50% + #{math.div($tag-size, 2)}), 100%);
+}
 
-	&:before {
-		content: "";
-		width: 0;
-		height: 0;
-		border-left: $arrow-size solid transparent;
-		border-right: $arrow-size solid transparent;
-		border-bottom: $arrow-size solid rgba( 0, 0, 0, 0.8 );
-		position: absolute;
-		top: 0;
-    left: 50%;
-    transform: translate(-$arrow-size, -$arrow-size);
+@keyframes pulse {
+	0% {
+		transform: scale(0.75);
+	}
+
+	70% {
+		transform: scale(1);
+	}
+
+	100% {
+		transform: scale(0.75);
 	}
 }
