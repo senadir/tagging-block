@@ -12,7 +12,7 @@ function Tag( {
 	onUpdate,
 	onRemove,
 	className,
-	styles,
+	style,
 	id = null,
 } ) {
 	const nodeRef = useRef();
@@ -25,7 +25,6 @@ function Tag( {
 	if ( initialX === undefined && initialY === undefined ) {
 		return null;
 	}
-	console.log( className );
 	return (
 		<Draggable
 			disabled={ ! onMove }
@@ -35,7 +34,10 @@ function Tag( {
 			nodeRef={ nodeRef }
 		>
 			<div ref={ nodeRef } className="tag">
-				<div className={ classnames( 'tag-handle', className ) }></div>
+				<div
+					className={ classnames( 'tag-handle', className ) }
+					style={ style }
+				></div>
 				<>
 					{ !! link?.text && (
 						<button
@@ -45,6 +47,7 @@ function Tag( {
 							className={ classnames( 'tag-tooltip', className, {
 								'has-link': link.url,
 							} ) }
+							style={ style }
 						>
 							{ link.text }
 						</button>

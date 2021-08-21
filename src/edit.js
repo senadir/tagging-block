@@ -178,11 +178,12 @@ function Edit( {
 	);
 
 	const tagClassnames = classnames( textColor.class, backgroundColor.class );
-	const tagStyles = ! ( textColor.class && backgroundColor.class ) && {
-		color: textColor.color,
-		backgroundColor: backgroundColor.color,
-	};
-	console.log( backgroundColor );
+	const tagStyles = ! ( textColor.class && backgroundColor.class )
+		? {
+				color: textColor.color,
+				backgroundColor: backgroundColor.color,
+		  }
+		: undefined;
 	return (
 		<>
 			<BlockControls group="block">
@@ -232,7 +233,7 @@ function Edit( {
 							<Tag
 								{ ...tag }
 								className={ tagClassnames }
-								styles={ tagStyles }
+								style={ tagStyles }
 								key={ tag.key }
 								onMove={ ( x, y ) =>
 									dispatch( {
@@ -251,7 +252,7 @@ function Edit( {
 						{ !! temporaryTag && (
 							<Tag
 								className={ tagClassnames }
-								styles={ tagStyles }
+								style={ tagStyles }
 								x={ temporaryTag.x * size.width }
 								y={ temporaryTag.y * size.height }
 								onUpdate={ persistTemporaryTag }
