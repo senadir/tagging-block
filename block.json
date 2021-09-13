@@ -15,9 +15,6 @@
 			"type": "array",
 			"default": []
 		},
-		"url": {
-			"type": "string"
-		},
 		"backgroundColor": {
 			"type": "string"
 		},

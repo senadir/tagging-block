@@ -1,15 +1,8 @@
-import {
-	useRef,
-	useCallback,
-	useState,
-	useMemo,
-	useEffect,
-} from '@wordpress/element';
+import { useRef, useCallback, useState, useMemo } from '@wordpress/element';
 import { v4 as uuid } from 'uuid';
 import useResizeObserver from 'use-resize-observer';
 import { ToolbarButton } from '@wordpress/components';
 import { tag as tagIcon } from '@wordpress/icons';
-import { useSelect } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import classnames from 'classnames';
 import {
@@ -19,17 +12,12 @@ import {
 	PanelColorSettings,
 	ContrastChecker,
 	InspectorControls,
-	BlockIcon,
-	MediaPlaceholder,
-	store as blockEditorStore,
+	getColorClassName,
 } from '@wordpress/block-editor';
 import { compose } from '@wordpress/compose';
-import { isBlobURL } from '@wordpress/blob';
-import { get, has, omit, pick } from 'lodash';
 
 import './editor.scss';
 import { Tag } from './components';
-import Image from './image'
 
 const ADD_TAG = 'ADD_TAG';
 const REMOVE_TAG = 'REMOVE_TAG';
@@ -89,39 +77,6 @@ function throttle( func, timeFrame ) {
 }
 
 /**
- * Is the url for the image hosted externally. An externally hosted image has no
- * id and is not a blob url.
- *
- * @param {number=} id  The id of the image.
- * @param {string=} url The url of the image.
- * @return {boolean} Is the url an externally hosted url?
- */
-export const isExternalImage = ( id, url ) => url && ! id && ! isBlobURL( url );
-
-/**
- * Checks if WP generated default image size. Size generation is skipped
- * when the image is smaller than the said size.
- *
- * @param {Object} image
- * @param {string} defaultSize
- * @return {boolean} Whether or not it has default image size.
- */
-function hasDefaultSize( image, defaultSize ) {
-	return (
-		has( image, [ 'sizes', defaultSize, 'url' ] ) ||
-		has( image, [ 'media_details', 'sizes', defaultSize, 'source_url' ] )
-	);
-}
-
-export const pickRelevantMediaFiles = ( image, size ) => {
-	let { url, alt, id, link, caption } = image;
-	url =
-		image?.sizes?.[ size ]?.url ||
-		image?.media_details?.sizes?.[ size ]?.source_url ||
-		image.url;
-	return { alt, id, link, caption, url };
-};
-/**
  * @return {WPElement} Element to render.
  */
 function Edit( {
@@ -131,29 +86,13 @@ function Edit( {
 	setTextColor,
 	backgroundColor,
 	setBackgroundColor,
+	...props
 } ) {
-	const { tags, url, id: imageId, alt, caption } = attributes;
-	console.log( attributes );
-	const altRef = useRef();
-	useEffect( () => {
-		altRef.current = alt;
-	}, [ alt ] );
-
-	const captionRef = useRef();
-	useEffect( () => {
-		captionRef.current = caption;
-	}, [ caption ] );
+	const { tags } = attributes;
 	const ref = useRef();
-	const containerRef = useRef();
-	const { imageDefaultSize } = useSelect( ( select ) => {
-		const { getSettings } = select( blockEditorStore );
-		return pick( getSettings(), [ 'imageDefaultSize', 'mediaUpload' ] );
-	}, [] );
 	const [ size, setSize ] = useState( {} );
 	const [ temporaryTag, setTemporaryTag ] = useState( null );
 	const [ isAddingTags, setIsAddingTags ] = useState( () => ! tags.length );
-	const [ temporaryURL, setTemporaryURL ] = useState();
-
 	useResizeObserver( {
 		ref,
 		onResize: throttle( setSize, 500 ),
@@ -168,9 +107,7 @@ function Edit( {
 		}
 		return [];
 	}, [ size.width, size.height, tags ] );
-	const blockProps = useBlockProps({
-		ref: containerRef
-	});
+	const blockProps = useBlockProps();
 
 	const getPosition = useCallback(
 		( event ) => {
@@ -247,71 +184,6 @@ function Edit( {
 				backgroundColor: backgroundColor.color,
 		  }
 		: undefined;
-
-	const isExternal = isExternalImage( imageId, url );
-	const src = isExternal ? url : undefined;
-
-	const mediaPreview = !! url && (
-		<img
-			alt={ __( 'Edit image' ) }
-			title={ __( 'Edit image' ) }
-			className={ 'edit-image-preview' }
-			src={ url }
-		/>
-	);
-
-	function onSelectImage( media ) {
-		if ( ! media || ! media.url ) {
-			setAttributes( {
-				url: undefined,
-				alt: undefined,
-				id: undefined,
-				title: undefined,
-				caption: undefined,
-			} );
-
-			return;
-		}
-
-		if ( isBlobURL( media.url ) ) {
-			setTemporaryURL( media.url );
-			return;
-		}
-
-		setTemporaryURL();
-
-		let mediaAttributes = pickRelevantMediaFiles( media, imageDefaultSize );
-
-		// If a caption text was meanwhile written by the user,
-		// make sure the text is not overwritten by empty captions.
-		if ( captionRef.current && ! get( mediaAttributes, [ 'caption' ] ) ) {
-			mediaAttributes = omit( mediaAttributes, [ 'caption' ] );
-		}
-
-		let additionalAttributes;
-		// Reset the dimension attributes if changing to a different image.
-		if ( ! media.id || media.id !== imageId ) {
-			additionalAttributes = {
-				width: undefined,
-				height: undefined,
-				// Fallback to size "full" if there's no default image size.
-				// It means the image is smaller, and the block will use a full-size URL.
-				sizeSlug: hasDefaultSize( media, imageDefaultSize )
-					? imageDefaultSize
-					: 'full',
-			};
-		} else {
-			// Keep the same url when selecting the same file, so "Image Size"
-			// option is not changed.
-			additionalAttributes = { url };
-		}
-
-		setAttributes( {
-			...mediaAttributes,
-			...additionalAttributes,
-		} );
-	}
-
 	return (
 		<>
 			<BlockControls group="block">
@@ -349,73 +221,47 @@ function Edit( {
 					</>
 				</PanelColorSettings>
 			</InspectorControls>
-			{ ! url ? (
-				<MediaPlaceholder
-					icon={ <BlockIcon icon={ tagIcon } /> }
-					onSelect={ onSelectImage }
-					onSelectURL={ () => 'onSelectURL' }
-					onError={ () => 'onUploadError' }
-					accept="image/*"
-					allowedTypes={ [ 'image' ] }
-					value={ { id: imageId, src } }
-					mediaPreview={ mediaPreview }
-					disableMediaButtons={ temporaryURL || url }
+			<figure { ...blockProps }>
+				<img
+					src="https://i.redd.it/u2v4cx280g071.jpg"
+					onClick={ handleClick }
+					ref={ ref }
 				/>
-			) : (
-				<figure { ...blockProps }>
-					{ ( temporaryURL || url ) && (
-				<Image
-					temporaryURL={ temporaryURL }
-					attributes={ attributes }
-					setAttributes={ setAttributes }
-					isSelected={ isSelected }
-					insertBlocksAfter={ insertBlocksAfter }
-					onReplace={ onReplace }
-					onSelectImage={ onSelectImage }
-					onSelectURL={ onSelectURL }
-					onUploadError={ onUploadError }
-					containerRef={ containerRef }
-					ref={ref}
-					context={ context }
-					clientId={ clientId }
-				/>
-			) }
-					<div className="tags">
-						<>
-							{ relativeTags.map( ( tag ) => (
-								<Tag
-									{ ...tag }
-									className={ tagClassnames }
-									style={ tagStyles }
-									key={ tag.key }
-									onMove={ ( x, y ) =>
-										dispatch( {
-											type: MOVE_TAG,
-											payload: {
-												x: x / size.width,
-												y: y / size.height,
-												id: tag.id,
-											},
-										} )
-									}
-									onUpdate={ updateTag }
-									onRemove={ removeTag }
-								/>
-							) ) }
-							{ !! temporaryTag && (
-								<Tag
-									className={ tagClassnames }
-									style={ tagStyles }
-									x={ temporaryTag.x * size.width }
-									y={ temporaryTag.y * size.height }
-									onUpdate={ persistTemporaryTag }
-									onRemove={ () => setTemporaryTag( null ) }
-								/>
-							) }
-						</>
-					</div>
-				</figure>
-			) }
+				<div className="tags">
+					<>
+						{ relativeTags.map( ( tag ) => (
+							<Tag
+								{ ...tag }
+								className={ tagClassnames }
+								style={ tagStyles }
+								key={ tag.key }
+								onMove={ ( x, y ) =>
+									dispatch( {
+										type: MOVE_TAG,
+										payload: {
+											x: x / size.width,
+											y: y / size.height,
+											id: tag.id,
+										},
+									} )
+								}
+								onUpdate={ updateTag }
+								onRemove={ removeTag }
+							/>
+						) ) }
+						{ !! temporaryTag && (
+							<Tag
+								className={ tagClassnames }
+								style={ tagStyles }
+								x={ temporaryTag.x * size.width }
+								y={ temporaryTag.y * size.height }
+								onUpdate={ persistTemporaryTag }
+								onRemove={ () => setTemporaryTag( null ) }
+							/>
+						) }
+					</>
+				</div>
+			</figure>
 		</>
 	);
 }
