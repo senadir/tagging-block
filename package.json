@@ -21,6 +21,7 @@
 		"@wordpress/icons": "^5.0.0",
 		"classnames": "^2.3.1",
 		"react-draggable": "^4.4.3",
+		"react-easy-crop": "^3.5.3",
 		"react-tiny-popover": "^6.0.10",
 		"use-resize-observer": "^7.0.1",
 		"uuid": "^8.3.2"

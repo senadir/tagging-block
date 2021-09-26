@@ -12,17 +12,18 @@ import {
 	PanelColorSettings,
 	ContrastChecker,
 	InspectorControls,
-	getColorClassName,
 } from '@wordpress/block-editor';
 import { compose } from '@wordpress/compose';
 
 import './editor.scss';
 import { Tag } from './components';
+import ImageEdit from './image/edit';
 
 const ADD_TAG = 'ADD_TAG';
 const REMOVE_TAG = 'REMOVE_TAG';
 const MOVE_TAG = 'MOVE_TAG';
 const EDIT_TAG = 'EDIT_TAG';
+
 function tagsReducer( state, { type, payload } ) {
 	switch ( type ) {
 		case ADD_TAG:
@@ -61,9 +62,12 @@ function tagsReducer( state, { type, payload } ) {
 	}
 }
 
-function isTag( target ) {
-	return !! target?.classList.contains( 'tagged-block-tag' );
-}
+/**
+ *
+ * function isTag( target ) {
+ * return !! target?.classList.contains( 'tagged-block-tag' );
+ * }
+ */
 
 function throttle( func, timeFrame ) {
 	let lastTime = 0;
@@ -107,7 +111,7 @@ function Edit( {
 		}
 		return [];
 	}, [ size.width, size.height, tags ] );
-	const blockProps = useBlockProps();
+	const blockProps = useBlockProps( { ref } );
 
 	const getPosition = useCallback(
 		( event ) => {
@@ -128,7 +132,7 @@ function Edit( {
 	);
 	const handleClick = useCallback(
 		( event ) => {
-			if ( isAddingTags ) {
+			if ( isAddingTags && event.target.tagName === 'IMG' ) {
 				const [ x, y ] = getPosition( event );
 				setTemporaryTag( { x, y, id: null } );
 			}
@@ -221,13 +225,14 @@ function Edit( {
 					</>
 				</PanelColorSettings>
 			</InspectorControls>
-			<figure { ...blockProps }>
-				<img
-					src="https://i.redd.it/u2v4cx280g071.jpg"
-					onClick={ handleClick }
-					ref={ ref }
+
+			<div { ...blockProps } onClick={ handleClick }>
+				<ImageEdit
+					attributes={ attributes }
+					setAttributes={ setAttributes }
+					{ ...props }
 				/>
-				<div className="tags">
+				<div className="tags" tabIndex={ 1 }>
 					<>
 						{ relativeTags.map( ( tag ) => (
 							<Tag
@@ -261,7 +266,7 @@ function Edit( {
 						) }
 					</>
 				</div>
-			</figure>
+			</div>
 		</>
 	);
 }
