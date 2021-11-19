@@ -4,6 +4,10 @@ $tag-size: 10px;
 $tag-border-size: 5px;
 $arrow-size: 5px;
 
+.wp-block-create-block-tagging-block {
+	position: relative;
+}
+
 .tags {
 	position: absolute;
 	top: 0;
@@ -16,8 +20,7 @@ $arrow-size: 5px;
 .tag {
 	position: absolute;
 	pointer-events: auto;
-	left: math.div(-$tag-size, 2);
-	top: math.div(-$tag-size, 2);
+//	transform: translate(-#{math.div($tag-size, 2)}, #{math.div($tag-size, 2)});
 
 	.tag-handle {
 			width: $tag-size;

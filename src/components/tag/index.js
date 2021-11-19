@@ -38,7 +38,7 @@ function Tag( {
 					className={ classnames( 'tag-handle', className ) }
 					style={ style }
 					id={ id }
-				></div>
+				/>
 				<>
 					{ !! link?.text && (
 						<button
